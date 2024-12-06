@@ -8,6 +8,8 @@ export default function ReportsPage() {
   const [results, setResults] = useState(null);
   const [calculatedData, setCalculatedData] = useState(null);
 
+  createSimulationResults();
+
   useEffect(() => {
     const savedResults = localStorage.getItem("simulationReport");
     if (savedResults) {
