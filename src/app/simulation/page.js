@@ -1,5 +1,4 @@
-"use client";
-
+'use client'
 class MinHeap {
   constructor() {
     this.heap = [];
@@ -151,40 +150,82 @@ function simulateQueue(formData) {
 }
 
 function formatValue(value) {
-  return typeof value === 'number' ? value.toFixed(2) : value;
+  return typeof value === "number" ? value.toFixed(2) : value;
 }
 
-import { useEffect, useState } from "react";
-
-import renderTables from "./components/Table";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Bath from './components/bath';
+import Piano from './components/Piano';
+import Kitchen from './components/Kitchen';
+import WaitingArea from './components/WaitingArea';
+import renderTables from './components/Table';
 
 export default function SimulationPage() {
-  const [formData, setFormData] = useState(null);
-  const [simulationData, setSimulationData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [numberOfTables, setNumberOfTables] = useState(0);
+  const [config, setConfig] = useState(null); // Para almacenar la configuración cargada
+  const router = useRouter();
 
   useEffect(() => {
-    const data = localStorage.getItem("simulationConfig");
+    // Recuperar la configuración guardada en localStorage
+    const data = localStorage.getItem('simulationConfig');
     if (data) {
-      const config = JSON.parse(data);
-      setNumberOfTables(config.numberOfTables)
+      const parsedData = JSON.parse(data);
+      setConfig(parsedData);
     }
   }, []);
-  
-  
-  const runSimulation = () => {
-    setLoading(true);
-    const results = simulateQueue(formData);
-    setSimulationData(results);
-    setLoading(false);
+
+  const handleFinish = () => {
+    // Verifica que config tenga los datos necesarios antes de continuar
+    if (!config) {
+      alert('Error: Configuración no cargada');
+      return;
+    }
+
+    // Guarda la configuración en localStorage para la vista `/report`
+    localStorage.setItem('simulationReport', JSON.stringify(config));
+    router.push('/report');
   };
 
   return (
-    <div className="w-[20%] m-auto">
-      <div className="grid gap-3 p-12 md:grid-cols-3 lg:grid-cols-2">
-        {renderTables({ numberOfTables })}
+    <div className="grid w-screen h-screen grid-cols-4 grid-rows-7">
+      {/* Fila 1 */}
+      <div className="items-center content-center col-span-3 row-span-1 border-t-4 border-l-4 border-gray-800">
+        <Piano />
       </div>
+      <div className="col-span-1 row-span-2 border-t-4 border-r-4 border-gray-800 bg-amber-50">
+        <Kitchen />
+      </div>
+      
+      {/* Fila 2 - Contenedor de las imágenes */}
+      <div className="col-span-3 row-span-5 overflow-hidden bg-white border-l-4 border-gray-800">
+        {/* Configuración interna para las imágenes */}
+        <div className="grid w-[95%] h-auto gap-4 p-2 place-items-center md:grid-cols-3 lg:grid-cols-3">
+          {/* Renderiza las imágenes aquí */}
+          {config && renderTables({ numberOfTables: config.numberOfTables })}
+        </div>
+      </div>
+      
+      <div className="col-span-1 row-span-2 border-t-2 border-l-2 border-r-4 border-gray-800 bg-blue-50">
+        <Bath />
+      </div>
+      
+      {/* Fila 3 */}
+      <div className="content-end col-span-1 row-span-4 p-2 border-r-4 border-gray-800">
+        <WaitingArea />
+      </div>
+      
+      {/* Fila 4 */}
+      <div className="col-span-2 row-span-2 bg-red-100"></div>
+      <div className="col-span-1 row-span-1 border-t-2 border-l-2 border-gray-800 bg-green-50"></div>
+      
+      {/* Botón en la esquina superior derecha */}
+      <button 
+        className="absolute px-4 py-2 text-white bg-blue-500 rounded top-4 right-4 hover:bg-blue-600" 
+        onClick={handleFinish} 
+        aria-label="Finalizar Simulación"
+      >
+        Finalizar Simulación
+      </button>
     </div>
   );
 }
