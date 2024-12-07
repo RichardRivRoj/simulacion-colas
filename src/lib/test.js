@@ -191,3 +191,25 @@ export function calcularMMSK (v_lambda, v_mu, v_c, v_k) {
 
     return resultados;
 };
+
+// Prepare data for table
+const simulationData = [];
+for (let i = 0; i < numClients; i++) {
+  simulationData.push({
+    client: i + 1,
+    arrivalTime: arrivalTimes[i].toFixed(2),
+    serviceTime: serviceTimes[i].toFixed(2),
+    startTimeService: startTimeService[i]
+      ? startTimeService[i].toFixed(2)
+      : "Waiting",
+    waitingTime: waitingTimes[i].toFixed(2),
+    departureTime: departureTimes[i]
+      ? departureTimes[i].toFixed(2)
+      : "Waiting",
+    timeInSystem: timeInSystem[i] ? timeInSystem[i].toFixed(2) : "N/A",
+    serverAssigned:
+      serverAssigned[i] !== undefined ? serverAssigned[i] + 1 : "N/A",
+  });
+}
+
+return simulationData;

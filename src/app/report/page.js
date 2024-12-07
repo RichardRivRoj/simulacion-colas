@@ -7,6 +7,7 @@ import Link from "next/link";
 export default function ReportsPage() {
   const [results, setResults] = useState(null);
   const [calculatedData, setCalculatedData] = useState(null);
+  const [queueSimulationData, setQueueSimulationData] = useState(null);
 
   useEffect(() => {
     const savedResults = localStorage.getItem("simulationReport");
@@ -14,6 +15,12 @@ export default function ReportsPage() {
       const data = JSON.parse(savedResults);
       setResults(data);
       calculateMetrics(data);
+    }
+
+    const savedQueueData = localStorage.getItem("simulationData");
+    if (savedQueueData) {
+      const queueData = JSON.parse(savedQueueData);
+      setQueueSimulationData(queueData);
     }
   }, []);
 
@@ -326,6 +333,77 @@ export default function ReportsPage() {
             </div>
           </div>
 
+          <div className="mb-12">
+            <h2 className="mb-6 text-2xl font-semibold text-gray-800">
+              Resumen de la simulacion
+            </h2>
+            {/* Contenedor para scroll vertical */}
+            <div className="overflow-y-auto border border-gray-200 rounded-lg shadow-lg max-h-64">
+              <table className="w-full border-collapse table-auto">
+                {/* Encabezado de la tabla */}
+                <thead className="sticky top-0 z-10 bg-blue-100">
+                  <tr>
+                    <th className="px-6 py-3 font-medium text-left text-gray-600 bg-blue-100">
+                      Cliente
+                    </th>
+                    <th className="px-6 py-3 font-medium text-left text-gray-600 bg-blue-100">
+                      Hora de llegada
+                    </th>
+                    <th className="px-6 py-3 font-medium text-left text-gray-600 bg-blue-100">
+                      Tiempo de servicio
+                    </th>
+                    <th className="px-6 py-3 font-medium text-left text-gray-600 bg-blue-100">
+                      Hora de inicio del servicio
+                    </th>
+                    <th className="px-6 py-3 font-medium text-left text-gray-600 bg-blue-100">
+                      Tiempo de espera
+                    </th>
+                    <th className="px-6 py-3 font-medium text-left text-gray-600 bg-blue-100">
+                      Hora de salida
+                    </th>
+                    <th className="px-6 py-3 font-medium text-left text-gray-600 bg-blue-100">
+                      Hora en el sistema
+                    </th>
+                    <th className="px-6 py-3 font-medium text-left text-gray-600 bg-blue-100">
+                      Servidor asignado
+                    </th>
+                  </tr>
+                </thead>
+                {/* Cuerpo de la tabla */}
+                <tbody className="divide-y divide-gray-200">
+                  {queueSimulationData.arrivalTimes.map((_, index) => (
+                    <tr key={index} className="hover:bg-blue-50">
+                      <td className="px-6 py-2 text-center text-gray-800">
+                        {index + 1}
+                      </td>
+                      <td className="px-6 py-2 text-center text-gray-800">
+                        {queueSimulationData.arrivalTimes[index].toFixed(2)}
+                      </td>
+                      <td className="px-6 py-2 text-center text-gray-800">
+                        {queueSimulationData.serviceTimes[index].toFixed(2)}
+                      </td>
+                      <td className="px-6 py-2 text-center text-gray-800">
+                        {queueSimulationData.startTimeService[index]?.toFixed(2) || "Waiting"}
+                      </td>
+                      <td className="px-6 py-2 text-center text-gray-800">
+                        {queueSimulationData.waitingTimes[index].toFixed(2)}
+                      </td>
+                      <td className="px-6 py-2 text-center text-gray-800">
+                        {queueSimulationData.departureTimes[index]?.toFixed(2) || "Waiting"}
+                      </td>
+                      <td className="px-6 py-2 text-center text-gray-800">
+                        {queueSimulationData.timeInSystem[index]?.toFixed(2) || "N/A"}
+                      </td>
+                      <td className="px-6 py-2 text-center text-gray-800">
+                        {queueSimulationData.serverAssigned[index] !== undefined ? queueSimulationData.serverAssigned[index] + 1 : "N/A"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <div className="text-center">
             <Link
               href="/form"
@@ -339,7 +417,7 @@ export default function ReportsPage() {
               className="inline-flex items-center px-5 py-3 mr-2 text-white bg-red-600 rounded-lg shadow-lg hover:bg-red-700"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
-              Ir Inicio
+              Ir a Inicio
             </Link>
           </div>
         </div>
