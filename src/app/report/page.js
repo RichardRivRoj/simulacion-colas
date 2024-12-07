@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import ServerLoadChart from "./components/ServerLoadChart";
 
 export default function ReportsPage() {
   const [results, setResults] = useState(null);
@@ -20,6 +21,7 @@ export default function ReportsPage() {
     const savedQueueData = localStorage.getItem("simulationData");
     if (savedQueueData) {
       const queueData = JSON.parse(savedQueueData);
+      console.log(queueData);
       setQueueSimulationData(queueData);
     }
   }, []);
@@ -383,24 +385,38 @@ export default function ReportsPage() {
                         {queueSimulationData.serviceTimes[index].toFixed(2)}
                       </td>
                       <td className="px-6 py-2 text-center text-gray-800">
-                        {queueSimulationData.startTimeService[index]?.toFixed(2) || "Waiting"}
+                        {queueSimulationData.startTimeService[index]?.toFixed(
+                          2
+                        ) || "Waiting"}
                       </td>
                       <td className="px-6 py-2 text-center text-gray-800">
                         {queueSimulationData.waitingTimes[index].toFixed(2)}
                       </td>
                       <td className="px-6 py-2 text-center text-gray-800">
-                        {queueSimulationData.departureTimes[index]?.toFixed(2) || "Waiting"}
+                        {queueSimulationData.departureTimes[index]?.toFixed(
+                          2
+                        ) || "Waiting"}
                       </td>
                       <td className="px-6 py-2 text-center text-gray-800">
-                        {queueSimulationData.timeInSystem[index]?.toFixed(2) || "N/A"}
+                        {queueSimulationData.timeInSystem[index]?.toFixed(2) ||
+                          "N/A"}
                       </td>
                       <td className="px-6 py-2 text-center text-gray-800">
-                        {queueSimulationData.serverAssigned[index] !== undefined ? queueSimulationData.serverAssigned[index] + 1 : "N/A"}
+                        {queueSimulationData.serverAssigned[index] !== undefined
+                          ? queueSimulationData.serverAssigned[index] + 1
+                          : "N/A"}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <div>
+            <h1>Reporte de Simulación</h1>
+            <div>
+                <ServerLoadChart queueSimulationData={queueSimulationData} /> // Pasar los datos al gráfico
             </div>
           </div>
 

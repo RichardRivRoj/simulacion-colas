@@ -9,11 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@nivo/bar": "^0.88.0",
+    "chart.js": "^4.4.7",
     "gsap": "^3.12.5",
     "lucide-react": "^0.468.0",
     "mathjs": "^14.0.0",
     "next": "15.0.3",
     "react": "19.0.0-rc-66855b96-20241106",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "19.0.0-rc-66855b96-20241106"
   },
   "devDependencies": {
