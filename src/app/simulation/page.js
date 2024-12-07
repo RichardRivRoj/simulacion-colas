@@ -151,7 +151,7 @@ function simulateQueueIndefinitely(formData, setSimulationData, stopFlag) {
 
     // Increment client counter
     clientIndex++;
-  }, 100 / lambda); // Adjust the interval based on arrival rate
+  }, 1000 / lambda); // Adjust the interval based on arrival rate
 }
 
 // In SimulationPage component
