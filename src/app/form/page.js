@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Settings, 
-  Users, 
+import {
+  Settings,
   Clock,
-  AlertCircle 
+  AlertCircle,
+  Ruler,
+  HandPlatter
 } from 'lucide-react';
 
 export default function FormPage() {
@@ -62,21 +63,26 @@ export default function FormPage() {
                 </label>
                 <div className="relative mt-1 rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <Users className="w-5 h-5 text-gray-400" />
+                    <HandPlatter className="w-5 h-5 text-gray-400" />
                   </div>
-                  <input
+                  <select
                     name="numberOfTables"
-                    type="number"
-                    min="4"
-                    max="10"
                     required
-                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    title="Debe ser un número entero mayor a 0."
+                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-700"
                     onChange={handleInputChange}
                     value={formData.numberOfTables}
-                  />
+                  >
+                    <option value="" disabled>
+                      Selecciona el número de mesas
+                    </option>
+                    <option value="4">4 Mesas</option>
+                    <option value="6">6 Mesas</option>
+                    <option value="10">10 Mesas</option>
+                  </select>
                 </div>
               </div>
+
+
 
               <div>
                 <div className="flex items-center">
@@ -97,13 +103,17 @@ export default function FormPage() {
                   <label className="block text-sm font-medium text-gray-700">
                     Tamaño Límite de Cola
                   </label>
-                  <div className="mt-1">
+                  <div className="relative mt-1 rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <Ruler className="w-5 h-5 text-gray-400" />
+                    </div>
                     <input
                       name="queueLimit"
                       type="number"
                       min="1"
                       required={queueLimitEnabled}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                      className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md text-gray-700 focus:ring-blue-500 focus:border-blue-500"
                       title="Debe ser un número mayor al número de mesas."
                       onChange={handleInputChange}
                       value={formData.queueLimit}
@@ -126,7 +136,8 @@ export default function FormPage() {
                     step="0.1"
                     min="0.1"
                     required
-                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0"
+                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md text-gray-700 focus:ring-blue-500 focus:border-blue-500"
                     title="Debe ser un número mayor a 0."
                     onChange={handleInputChange}
                     value={formData.arrivalRate}
@@ -148,7 +159,8 @@ export default function FormPage() {
                     step="0.1"
                     min="0.1"
                     required
-                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0"
+                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md text-gray-700 focus:ring-blue-500 focus:border-blue-500"
                     title="Debe ser un número mayor a 0."
                     onChange={handleInputChange}
                     value={formData.serviceRate}
