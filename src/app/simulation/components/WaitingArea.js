@@ -14,7 +14,7 @@ const WaitingArea = ({ className }) => {
 
   return (
     <div className={className}>
-      <img src="waitingArea.svg" alt="Baño" className="h-full w-[75%] ml-20"/>
+      <img src="waitingArea.svg" alt="Área de Espera" className="h-full w-[75%] ml-20"/>
     </div>
   );
 }

@@ -2,30 +2,39 @@
 
 import { useEffect, useRef } from 'react';
 import { User } from 'lucide-react';
-import { animateCustomer } from '@/lib/animation';
 
-export default function Person({ position, status, onAnimationComplete }) {
+export default function Person({ position, status}) {
   const personRef = useRef(null);
-
-  useEffect(() => {
-    if (personRef.current) {
-      const animation = animateCustomer(personRef.current, position);
-      if (onAnimationComplete) {
-        animation.then(onAnimationComplete);
-      }
-    }
-  }, [position, onAnimationComplete]);
+  const { top, left } = position;
 
   return (
     <div
       ref={personRef}
-      className={`absolute ${
-        status === 'waiting' ? 'text-yellow-500' : 
-        status === 'served' ? 'text-green-500' : 'text-blue-500'
-      }`}
-      style={{ transform: `translate(${position.initial.x}px, ${position.initial.y}px)` }}
+      className={`absolute ${status === 'waiting' ? 'text-yellow-500' :
+          status === 'served' ? 'text-green-500' : 'text-blue-500'
+        }`}
+      style={{
+        left: `${left}px`, // Posición inicial (esquina superior izquierda)
+        top: `${top}px`,
+        transform: 'translate(0, 0)', // Inicializa en (0, 0)
+      }}
     >
-      <User className="w-6 h-6" />
+      {/* Personaje */}
+      <User className="w-6 h-6" id='Person-1'/>
     </div>
+
   );
+
+  // return (
+  //   <div
+  //     ref={personRef}
+  //     className={`absolute ${
+  //       status === 'waiting' ? 'text-yellow-500' :
+  //       status === 'served' ? 'text-green-500' : 'text-blue-500'
+  //     }`}
+  //     style={{ transform: `translate(${position.initial.x}px, ${position.initial.y}px)` }}
+  //   >
+  //     <User className="w-6 h-6" />
+  //   </div>
+  // );
 }
