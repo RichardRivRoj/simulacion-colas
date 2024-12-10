@@ -65,20 +65,18 @@ export default function FormPage() {
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <HandPlatter className="w-5 h-5 text-gray-400" />
                   </div>
-                  <select
+                  <input
                     name="numberOfTables"
+                    type="number"
+                    min="4"
+                    max="10"
+                    step="1"
                     required
-                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-700"
+                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                    title="Debe ser un número entero mayor a 0."
                     onChange={handleInputChange}
                     value={formData.numberOfTables}
-                  >
-                    <option value="" disabled>
-                      Selecciona el número de mesas
-                    </option>
-                    <option value="4">4 Mesas</option>
-                    <option value="6">6 Mesas</option>
-                    <option value="10">10 Mesas</option>
-                  </select>
+                  />
                 </div>
               </div>
 
