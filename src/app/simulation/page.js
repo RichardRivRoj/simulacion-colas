@@ -188,6 +188,13 @@ export default function SimulationPage() {
       setConfig(parsedData);
     }
   }, []);
+  
+  useEffect(() => {
+    if (config) {
+      // Start the simulation indefinitely
+      simulateQueueIndefinitely(config, setSimulationData, stopFlag);
+    }
+  }, [config]);
 
   const handleFinish = () => {
     stopFlag.current = true;
@@ -269,19 +276,19 @@ export default function SimulationPage() {
         {/* Waiting Area */}
         <div
           id="WaitingArea"
-          className="col-span-2 row-span-2 border-2 border-black bg-red-100"
+          className="col-span-2 row-span-2 bg-red-100 border-2 border-black"
         >
           <div className="flex flex-row-reverse justify-end w-[95%] h-auto gap-2 grid-cols-5">
             <Person position={personPosition} />
           </div>
         </div>
         <div className="col-span-1 row-span-2 border-2 border-black bg-green-50"></div>
-        <div className="col-span-1 row-span-2 border-2 border-black p-2">
+        <div className="col-span-1 row-span-2 p-2 border-2 border-black">
           <WaitingArea />
         </div>
 
         {/* Tables */}
-        <div className="col-span-3 row-span-4 border-2 border-black overflow-hidden bg-white">
+        <div className="col-span-3 row-span-4 overflow-hidden bg-white border-2 border-black">
           <div className="grid w-[95%] h-auto gap-4 p-2 place-items-center grid-cols-5">
             {config && renderTables({ numberOfTables: config.numberOfTables })}
           </div>
