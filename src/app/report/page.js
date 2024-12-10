@@ -93,39 +93,60 @@ export default function ReportsPage() {
       const Ls = Lq + v_rho;
       const Wq = Lq / v_lambda;
       const Ws = Wq + 1 / v_mu;
+      const v_lambdae = v_lambda;
+      const v_lambdap = v_lambda - v_lambdae;
+
+      const U = Math.random();
+      const t_llegada = -Math.log(U) / v_lambda;
+      const t_servicio = -Math.log(U) / v_mu;
+      const v_sa = v_rc * v_c;
+      const v_si = v_c - v_sa;
 
       setCalculatedData({
         rho: v_rho.toFixed(4),
+        rhoc: v_rc.toFixed(4),
         po: v_po.toFixed(4),
         Ls: Ls.toFixed(4),
         Lq: Lq.toFixed(4),
         Ws: Ws.toFixed(4),
         Wq: Wq.toFixed(4),
+        lambdaEffective: v_lambdae.toFixed(4),
+        lambdaLost: v_lambdap.toFixed(4),
+        tl: t_llegada.toFixed(4),
+        ts: t_servicio.toFixed(4),
+        sa: v_sa.toFixed(4),
+        si: v_si.toFixed(4),
         resultados,
       });
     } else {
       const v_k = queueLimit;
+
+      const v_rc = v_rho / v_c;
       // Calcular P₀
       let v_po;
-      if (v_rc === 1) {
-        const sumatoria = Array.from({ length: v_c }, (_, i) => i).reduce(
-          (acc, n) => acc + Math.pow(v_rc, n) / factorial(n),
-          0
-        );
-        v_po =
-          1 /
-          (sumatoria +
-            (Math.pow(v_rho, v_c) / factorial(v_c)) * (v_k - v_c + 1));
+      if (v_rc !== 1) {
+        // Caso cuando rho / c ≠ 1
+        const sumatoria = Array.from(
+          { length: v_c },
+          (_, n) => Math.pow(v_rho, n) / factorial(n)
+        ).reduce((acc, val) => acc + val, 0);
+
+        const terminoExtra =
+          (Math.pow(v_rho, v_c) / factorial(v_c)) *
+          ((1 - Math.pow(v_rc, v_k - v_c + 1)) / (1 - v_rc));
+
+        v_po = 1 / (sumatoria + terminoExtra);
       } else {
-        const sumatoria = Array.from({ length: v_c }, (_, i) => i).reduce(
-          (acc, n) => acc + Math.pow(v_rho, n) / factorial(n),
-          0
-        );
-        v_po =
-          1 /
-          (sumatoria +
-            (Math.pow(v_rho, v_c) * (1 - Math.pow(v_rc, v_k - v_c + 1))) /
-              (factorial(v_c) * (1 - v_rc)));
+        // Caso especial cuando rho / c = 1
+        const sumatoria = Array.from(
+          { length: v_c },
+          (_, n) => Math.pow(v_rho, n) / factorial(n)
+        ).reduce((acc, val) => acc + val, 0);
+
+        const terminoExtra =
+          (Math.pow(v_rho, v_c) / factorial(v_c)) * (v_k - v_c + 1);
+
+        v_po = 1 / (sumatoria + terminoExtra);
       }
 
       // Tabla de n, Pn, Fn
@@ -166,7 +187,7 @@ export default function ReportsPage() {
       if (v_rho / v_c === 1) {
         Lq =
           ((Math.pow(v_rho, v_c) * (v_k - v_c) * (v_k - v_c + 1)) /
-            factorial(2 * v_c)) *
+            (2 * factorial(v_c))) *
           v_po;
       }
       // Caso 2: ρ / c ≠ 1
@@ -180,14 +201,19 @@ export default function ReportsPage() {
         Lq = term1 * (term2 - term3) * v_po;
       }
 
-      const Ls = Lq + v_rho;
-      const Wq = Lq / v_lambda;
-      const Ws = Wq + 1 / v_mu;
       const lambdaEffective = v_lambda * (1 - resultados.at(-1).Pn); // Clientes efectivamente atendidos
       const lambdaLost = v_lambda - lambdaEffective; // Clientes perdidos
+      const Ls = Lq + lambdaEffective / v_mu;
+      const Wq = Lq / lambdaEffective;
+      const Ws = Wq + 1 / v_mu;
+      const t_llegada = 1 / lambdaEffective;
+      const t_servicio = 1 / v_mu;
+      const v_sa = lambdaEffective / v_mu;
+      const v_si = v_c - v_sa;
 
       setCalculatedData({
         rho: v_rho.toFixed(4),
+        rhoc: v_rc.toFixed(4),
         po: v_po.toFixed(4),
         Ls: Ls.toFixed(4),
         Lq: Lq.toFixed(4),
@@ -195,6 +221,10 @@ export default function ReportsPage() {
         Wq: Wq.toFixed(4),
         lambdaEffective: lambdaEffective.toFixed(4),
         lambdaLost: lambdaLost.toFixed(4),
+        tl: t_llegada.toFixed(4),
+        ts: t_servicio.toFixed(4),
+        sa: v_sa.toFixed(0),
+        si: v_si.toFixed(0),
         resultados,
       });
     }
@@ -239,6 +269,12 @@ export default function ReportsPage() {
                 <p className="font-medium text-gray-700">ρ (Utilización):</p>
                 <p className="text-xl font-bold text-gray-900">
                   {calculatedData.rho}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg shadow-sm bg-gray-50">
+                <p className="font-medium text-gray-700">ρ/c (Utilización):</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {calculatedData.rhoc}
                 </p>
               </div>
               <div className="p-4 rounded-lg shadow-sm bg-gray-50">
@@ -289,6 +325,38 @@ export default function ReportsPage() {
                 <p className="font-medium text-gray-700">λ perdido:</p>
                 <p className="text-xl font-bold text-gray-900">
                   {calculatedData.lambdaLost}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg shadow-sm bg-gray-50">
+                <p className="font-medium text-gray-700">
+                  Tiempo entre usuarios:
+                </p>
+                <p className="text-xl font-bold text-gray-900">
+                  {calculatedData.tl}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg shadow-sm bg-gray-50">
+                <p className="font-medium text-gray-700">
+                  Tiempo de servicio individual:
+                </p>
+                <p className="text-xl font-bold text-gray-900">
+                  {calculatedData.ts}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg shadow-sm bg-gray-50">
+                <p className="font-medium text-gray-700">
+                  Número de servidores activos:
+                </p>
+                <p className="text-xl font-bold text-gray-900">
+                  {calculatedData.sa}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg shadow-sm bg-gray-50">
+                <p className="font-medium text-gray-700">
+                  Número de servidores inactivos:
+                </p>
+                <p className="text-xl font-bold text-gray-900">
+                  {calculatedData.si}
                 </p>
               </div>
             </div>
@@ -416,7 +484,8 @@ export default function ReportsPage() {
           <div>
             <h1>Reporte de Simulación</h1>
             <div>
-                <ServerLoadChart queueSimulationData={queueSimulationData} /> // Pasar los datos al gráfico
+              <ServerLoadChart queueSimulationData={queueSimulationData} /> //
+              Pasar los datos al gráfico
             </div>
           </div>
 

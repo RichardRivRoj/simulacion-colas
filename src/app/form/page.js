@@ -1,24 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  Settings,
-  Clock,
-  AlertCircle,
-  Ruler,
-  HandPlatter
-} from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Settings, Clock, AlertCircle, Ruler, HandPlatter } from "lucide-react";
 
 export default function FormPage() {
   const [queueLimitEnabled, setQueueLimitEnabled] = useState(false);
   const [formData, setFormData] = useState({
-    numberOfTables: '',
-    queueLimit: '',
-    arrivalRate: '',
-    serviceRate: ''
+    numberOfTables: "",
+    queueLimit: "",
+    arrivalRate: "",
+    serviceRate: "",
   });
   const router = useRouter();
+  const [errors, setErrors] = useState({});
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -26,22 +21,55 @@ export default function FormPage() {
     const numericData = {
       numberOfTables: parseFloat(formData.numberOfTables),
       arrivalRate: parseFloat(formData.arrivalRate),
-      serviceRate: parseFloat(formData.serviceRate)
+      serviceRate: parseFloat(formData.serviceRate),
     };
     if (queueLimitEnabled) {
       numericData.queueLimit = parseFloat(formData.queueLimit);
     }
-    localStorage.setItem('simulationConfig', JSON.stringify(numericData));
-    router.push('/simulation');
+    localStorage.setItem("simulationConfig", JSON.stringify(numericData));
+
+    const { numberOfTables: c, queueLimit: limit, arrivalRate: lambda, serviceRate: mu } = formData;
+
+    let validationErrors = {};
+
+    // Validaciones
+    if (!c || c <= 0)
+      validationErrors.numberOfTables =
+        "El número de mesas debe ser mayor a 0.";
+    if (!lambda || lambda <= 0)
+      validationErrors.arrivalRate =
+        "La tasa de llegada (λ) debe ser mayor a 0.";
+    if (!mu || mu <= 0)
+      validationErrors.serviceRate =
+        "La tasa de servicio (μ) debe ser mayor a 0.";
+    if (lambda && mu && c && lambda > c * mu) {
+      validationErrors.arrivalRate =
+        "La tasa de llegada (λ) debe ser menor que la capacidad total (c × μ).";
+    }
+    if (queueLimitEnabled && (!limit || limit >= c)) {
+      validationErrors.queueLimit =
+        "El tamaño límite de la cola debe ser mayor que el número de mesas (servidores).";
+    }
+
+    // Si hay errores, establecerlos y no enviar el formulario
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    // Si no hay errores
+    console.log("Formulario válido. Procesando simulación...");
+    router.push("/simulation");
   };
 
   // Agregar un manejador de cambio para cada input
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
+    setFormData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
     }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   return (
@@ -72,15 +100,18 @@ export default function FormPage() {
                     max="10"
                     step="1"
                     required
-                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full py-2 pl-10 pr-3 text-gray-700 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     title="Debe ser un número entero mayor a 0."
                     onChange={handleInputChange}
                     value={formData.numberOfTables}
                   />
+                  {errors.numberOfTables && (
+                    <p className="text-sm text-red-500">
+                      {errors.numberOfTables}
+                    </p>
+                  )}
                 </div>
               </div>
-
-
 
               <div>
                 <div className="flex items-center">
@@ -111,17 +142,22 @@ export default function FormPage() {
                       min="1"
                       required={queueLimitEnabled}
                       placeholder="0"
-                      className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                      className="block w-full py-2 pl-10 pr-3 text-gray-700 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       title="Debe ser un número mayor al número de mesas."
                       onChange={handleInputChange}
                       value={formData.queueLimit}
                     />
+                    {errors.queueLimit && (
+                      <p className="absolute text-sm text-red-500">
+                        {errors.queueLimit}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block pt-1 text-sm font-medium text-gray-700">
                   Tasa de Llegada (λ)
                 </label>
                 <div className="relative mt-1 rounded-md shadow-sm">
@@ -135,16 +171,19 @@ export default function FormPage() {
                     min="0.1"
                     required
                     placeholder="0"
-                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full py-2 pl-10 pr-3 text-gray-700 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     title="Debe ser un número mayor a 0."
                     onChange={handleInputChange}
                     value={formData.arrivalRate}
                   />
+                  {errors.arrivalRate && (
+                    <p className="absolute text-sm text-red-500">{errors.arrivalRate}</p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block pt-1 text-sm font-medium text-gray-700">
                   Tasa de Servicio (μ)
                 </label>
                 <div className="relative mt-1 rounded-md shadow-sm">
@@ -158,11 +197,14 @@ export default function FormPage() {
                     min="0.1"
                     required
                     placeholder="0"
-                    className="block w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full py-2 pl-10 pr-3 text-gray-700 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     title="Debe ser un número mayor a 0."
                     onChange={handleInputChange}
                     value={formData.serviceRate}
                   />
+                  {errors.serviceRate && (
+                    <p className="text-sm text-red-500">{errors.serviceRate}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -174,7 +216,8 @@ export default function FormPage() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-blue-700">
-                    La simulación se ejecutará con una escala de tiempo donde 1 minuto equivale a 1 hora en tiempo real.
+                    La simulación se ejecutará con una escala de tiempo donde 1
+                    minuto equivale a 1 hora en tiempo real.
                   </p>
                 </div>
               </div>
