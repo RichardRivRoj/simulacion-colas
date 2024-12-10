@@ -69,91 +69,6 @@ function exponential(rate) {
   return -Math.log(1 - Math.random()) / rate;
 }
 
-function simulateQueueIndefinitely(formData, setSimulationData, stopFlag) {
-  const {
-    numberOfTables,
-    queueLimit,
-    arrivalRate,
-    serviceRate,
-    queueLimitEnabled,
-  } = formData;
-  const lambda = arrivalRate / 60; // Convert to per minute
-  const mu = serviceRate / 60; // Convert to per minute
-  const numServers = numberOfTables;
-
-  // Initialize arrays to store simulation data
-  const arrivalTimes = [];
-  const serviceTimes = [];
-  const startTimeService = [];
-  const waitingTimes = [];
-  const departureTimes = [];
-  const timeInSystem = [];
-  const serverAssigned = [];
-
-  // Initialize priority queue with server availability times
-  const serverHeap = new MinHeap();
-  for (let i = 0; i < numServers; i++) {
-    serverHeap.insert({ time: 0, id: i });
-  }
-
-  // Initialize client counter
-  let clientIndex = 0;
-
-  // Function to generate inter-arrival and service times
-  function generateTimes() {
-    return {
-      arrival: clientIndex === 0 ? exponential(1 / lambda) : arrivalTimes[clientIndex - 1] + exponential(1 / lambda),
-      service: exponential(1 / mu),
-    };
-  }
-
-  // Simulation loop
-  const simulationInterval = setInterval(() => {
-    if (stopFlag.current) {
-      clearInterval(simulationInterval);
-      return;
-    }
-
-    // Generate times for the current client
-    const { arrival, service } = generateTimes();
-
-    // Process the current client
-    const server = serverHeap.extractMin();
-    if (server !== null) {
-      const serviceStart = Math.max(arrival, server.time);
-      const waiting = serviceStart - arrival;
-      const departure = serviceStart + service;
-      startTimeService.push(serviceStart);
-      waitingTimes.push(waiting);
-      departureTimes.push(departure);
-      timeInSystem.push(departure - arrival);
-      serverAssigned.push(server.id);
-      serverHeap.insert({ time: departure, id: server.id });
-    } else {
-      // No server available and queue is full, client is lost
-      // Handle client loss if necessary
-    }
-
-    // Update arrival and service times arrays
-    arrivalTimes.push(arrival);
-    serviceTimes.push(service);
-
-    // Update simulation data state
-    setSimulationData({
-      arrivalTimes,
-      serviceTimes,
-      startTimeService,
-      waitingTimes,
-      departureTimes,
-      timeInSystem,
-      serverAssigned,
-    });
-
-    // Increment client counter
-    clientIndex++;
-  }, 1000 / lambda); // Adjust the interval based on arrival rate
-}
-
 // In SimulationPage component
 import React, { useEffect, useState, useRef } from "react";
 import { gsap } from "gsap";
@@ -178,8 +93,7 @@ export default function SimulationPage() {
     serverAssigned: [],
   });
   const stopFlag = useRef(false);
-
-  const [personPosition, setPersonPosition] = useState({ top: 50, left: 50 });
+  const [people, setPeople] = useState([]); // Personas en el área de espera
 
   useEffect(() => {
     const data = localStorage.getItem("simulationConfig");
@@ -188,65 +102,204 @@ export default function SimulationPage() {
       setConfig(parsedData);
     }
   }, []);
-  
-  useEffect(() => {
-    if (config) {
-      // Start the simulation indefinitely
-      simulateQueueIndefinitely(config, setSimulationData, stopFlag);
-    }
-  }, [config]);
 
-  const handleFinish = () => {
-    stopFlag.current = true;
+  const addPersonToWaitingArea = (arrivalTime, serviceTime) => {
+    // Calcular la posición de la nueva persona en la WaitingArea
+    const waitingArea = document.getElementById("WaitingArea");
+    const personCount = people.length;
 
-    localStorage.setItem("simulationReport", JSON.stringify(config));
-    localStorage.setItem("simulationData", JSON.stringify(simulationData));
-    router.push("/report");
+    const personWidth = 50;
+    const personHeight = 80;
+    const waitingAreaWidth = waitingArea.getBoundingClientRect().width;
+    const padding = 10;
+
+    const personsInRow = Math.floor(waitingAreaWidth / (personWidth + padding));
+    const row = Math.floor(personCount / personsInRow);
+    const column = personCount % personsInRow;
+
+    const left = column * (personWidth + padding);
+    const top = row * (personHeight + padding);
+
+    // Crear la nueva persona
+    const newPerson = {
+      id: people.length + 1,
+      arrivalTime,
+      serviceTime,
+      position: { top, left },
+      status: "waiting",
+    };
+
+    // Actualizar el estado
+    setPeople([...people, newPerson]);
   };
 
-  const moveToTable = async (tableId) => {
-    const person = document.getElementById("Person-1");
-    const table = document.getElementById(`table-${tableId}`); // Usamos el mismo id
+  // TODO: Funcional pero la animacion falla de momento
+  const moveToTable = (personId, tableId) => {
+    const personElement = document.getElementById(`person-${personId}`);
+    const tableElement = document.getElementById(`table-${tableId}`);
+    const entrance = document.getElementById("entrance");
+    if (!personElement || !tableElement) return;
 
-    if (person && table) {
-      // Obtener posiciones actuales de la persona y la mesa
-      const personRect = person.getBoundingClientRect();
-      const tableRect = table.getBoundingClientRect();
+    if (personElement && tableElement && entrance) {
+      let personRect = personElement.getBoundingClientRect();
+      const tableRect = tableElement.getBoundingClientRect();
+      const entranceRect = entrance.getBoundingClientRect();
 
-      const currentTop = personRect.top + window.scrollY;
-      const currentLeft = personRect.left + window.scrollX;
+      const entranceTop = entranceRect.top + window.scrollY + entranceRect.height / 2;
+      const entranceLeft = entranceRect.left + window.scrollX + entranceRect.width / 2;
+
+      let currentTop = personRect.top + window.scrollY;
+      let currentLeft = personRect.left + window.scrollX;
 
       const targetTop = tableRect.top + window.scrollY;
       const targetLeft = tableRect.left + window.scrollX;
 
-      // Crear la animación en forma de L con gsap.timeline()
+      // Crear animación con gsap.timeline()
       const timeline = gsap.timeline();
 
-      // 1. Movimiento horizontal (solo si las posiciones no coinciden)
-      if (currentLeft !== targetLeft) {
-        timeline.to(person, {
-          x: targetLeft - currentLeft,
-          duration: 0.7, // Duración del movimiento
-          ease: "power1.inOut", // Suavizado
+      // 1. Movimiento hacia la entrada
+      if (currentTop !== entranceTop || currentLeft !== entranceLeft) {
+        timeline.to(personElement, {
+          x: entranceLeft - currentLeft,
+          y: entranceTop - currentTop,
+          duration: 0.7,
+          ease: "power1.inOut",
         });
       }
 
+      personRect = personElement.getBoundingClientRect();
+      currentTop = personRect.top + window.scrollY;
+      currentLeft = personRect.left + window.scrollX;
+
       // 2. Movimiento vertical (solo si las posiciones no coinciden)
       if (currentTop !== targetTop) {
-        timeline.to(person, {
+        timeline.to(personElement, {
           y: targetTop - currentTop,
           duration: 0.7, // Duración del movimiento
           ease: "power1.inOut", // Suavizado
         });
       }
 
-      // Esperar a que la animación se complete
-      await timeline;
+      // 1. Movimiento horizontal (solo si las posiciones no coinciden)
+      if (currentLeft !== targetLeft) {
+        timeline.to(personElement, {
+          x: targetLeft - currentLeft,
+          duration: 0.7, // Duración del movimiento
+          ease: "power1.inOut", // Suavizado
+        });
+      }
     }
   };
 
-  const handleTableClick = (tableId) => {
-    moveToTable(tableId);
+  function simulateQueueIndefinitely(formData, setSimulationData, stopFlag) {
+    const {
+      numberOfTables,
+      queueLimit,
+      arrivalRate,
+      serviceRate,
+      queueLimitEnabled,
+    } = formData;
+    const lambda = arrivalRate / 60; // Convert to per minute
+    const mu = serviceRate / 60; // Convert to per minute
+    const numServers = numberOfTables;
+
+    // Initialize arrays to store simulation data
+    const arrivalTimes = [];
+    const serviceTimes = [];
+    const startTimeService = [];
+    const waitingTimes = [];
+    const departureTimes = [];
+    const timeInSystem = [];
+    const serverAssigned = [];
+
+    // Initialize priority queue with server availability times
+    const serverHeap = new MinHeap();
+    for (let i = 0; i < numServers; i++) {
+      serverHeap.insert({ time: 0, id: i });
+    }
+
+    // Initialize client counter
+    let clientIndex = 0;
+
+    // Function to generate inter-arrival and service times
+    function generateTimes() {
+      return {
+        arrival: clientIndex === 0 ? exponential(1 / lambda) : arrivalTimes[clientIndex - 1] + exponential(1 / lambda),
+        service: exponential(1 / mu),
+      };
+    }
+
+    // Simulation loop
+    const simulationInterval = setInterval(() => {
+      if (stopFlag.current) {
+        clearInterval(simulationInterval);
+        return;
+      }
+
+      // Generate times for the current client
+      const { arrival, service } = generateTimes();
+
+      // Process the current client
+      const server = serverHeap.extractMin();
+      if (server !== null) {
+        const serviceStart = Math.max(arrival, server.time);
+        const waiting = serviceStart - arrival;
+        const departure = serviceStart + service;
+        startTimeService.push(serviceStart);
+        waitingTimes.push(waiting);
+        departureTimes.push(departure);
+        timeInSystem.push(departure - arrival);
+        serverAssigned.push(server.id);
+        serverHeap.insert({ time: departure, id: server.id });
+      } else {
+        // No server available and queue is full, client is lost
+        // Handle client loss if necessary
+      }
+
+      // Update arrival and service times arrays
+      arrivalTimes.push(arrival);
+      serviceTimes.push(service);
+
+      // Agregar nueva persona al área de espera
+      addPersonToWaitingArea(arrival, service,);
+
+      // Intentar asignar personas a servidores
+      people.forEach((person) => {
+        if (person.status === "waiting") {
+          if (serverAssigned) {
+            moveToTable(person.id, serverAssigned);
+            person.status = "served";
+          }
+        }
+      });
+
+      // Update simulation data state
+      setSimulationData({
+        arrivalTimes,
+        serviceTimes,
+        startTimeService,
+        waitingTimes,
+        departureTimes,
+        timeInSystem,
+        serverAssigned,
+      });
+
+      // Increment client counter
+      clientIndex++;
+    }, 100 / lambda); // Adjust the interval based on arrival rate
+  }
+
+  const handleStart = () => {
+    stopFlag.current = false;
+    simulateQueueIndefinitely(config, setSimulationData, stopFlag);
+  };
+
+  const handleStop = () => {
+    stopFlag.current = true;
+
+    localStorage.setItem("simulationReport", JSON.stringify(config));
+    localStorage.setItem("simulationData", JSON.stringify(simulationData));
+    router.push("/report");
   };
 
   const renderTables = ({ numberOfTables }) => {
@@ -260,8 +313,7 @@ export default function SimulationPage() {
               id={`table-${i}`}
               src="/table.svg"
               alt={`Table-${i}`}
-              className="w-16 h-auto cursor-pointer"
-              onClick={() => handleTableClick(i)}
+              className="w-16 h-auto"
             />
           </p>
         </div>
@@ -276,19 +328,26 @@ export default function SimulationPage() {
         {/* Waiting Area */}
         <div
           id="WaitingArea"
-          className="col-span-2 row-span-2 bg-red-100 border-2 border-black"
+          className="col-span-2 row-span-2 bg-red-100 border-b-2 border-black"
         >
-          <div className="flex flex-row-reverse justify-end w-[95%] h-auto gap-2 grid-cols-5">
-            <Person position={personPosition} />
+          <div className="grid w-[95%] h-auto gap-4 p-2 place-items-center grid-cols-5">
+            {people.map((person) => (
+              <Person
+                key={person.id}
+                id={person.id}
+                position={person.position}
+                status={person.status}
+              />
+            ))}
           </div>
         </div>
-        <div className="col-span-1 row-span-2 border-2 border-black bg-green-50"></div>
+        <div id="entrance" className="col-span-1 row-span-2 bg-green-50"></div>
         <div className="col-span-1 row-span-2 p-2 border-2 border-black">
           <WaitingArea />
         </div>
 
         {/* Tables */}
-        <div className="col-span-3 row-span-4 overflow-hidden bg-white border-2 border-black">
+        <div className="col-span-3 row-span-4 overflow-hidden bg-white">
           <div className="grid w-[95%] h-auto gap-4 p-2 place-items-center grid-cols-5">
             {config && renderTables({ numberOfTables: config.numberOfTables })}
           </div>
@@ -298,23 +357,24 @@ export default function SimulationPage() {
         </div>
 
         {/* Other Sections */}
-        <div className="col-span-3 row-span-2 border-2 border-black">
+        <div className="col-span-3 row-span-">
           <Piano />
         </div>
-        <div className="col-span-1 row-span-2 border-2 border-black bg-blue-50">
+        <div className="col-span-1 row-span-2 border-2 bg-blue-50">
           <Bath />
         </div>
 
         {/* Buttons */}
+        // * Import: El boton de play no funciona a la primera
         <button
           className="absolute px-4 py-2 text-white bg-blue-500 rounded top-4 right-4 hover:bg-blue-600"
-          onClick={handleFinish}
+          onClick={handleStart}
         >
           <CirclePlay />
         </button>
         <button
           className="absolute px-4 py-2 text-white bg-red-500 rounded top-16 right-4 hover:bg-red-600"
-          onClick={handleFinish}
+          onClick={handleStop}
         >
           <CircleStop />
         </button>

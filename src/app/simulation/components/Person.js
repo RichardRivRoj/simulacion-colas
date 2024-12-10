@@ -3,14 +3,15 @@
 import { useEffect, useRef } from 'react';
 import { User } from 'lucide-react';
 
-export default function Person({ position, status}) {
+export default function Person({ position, status, id}) {
   const personRef = useRef(null);
   const { top, left } = position;
 
   return (
     <div
+      id={`person-${id}`}
       ref={personRef}
-      className={`absolute ${status === 'waiting' ? 'text-yellow-500' :
+      className={`person absolute ${status === 'waiting' ? 'text-yellow-500' :
           status === 'served' ? 'text-green-500' : 'text-blue-500'
         }`}
       style={{
@@ -20,7 +21,7 @@ export default function Person({ position, status}) {
       }}
     >
       {/* Personaje */}
-      <User className="w-6 h-6" id='Person-1'/>
+      <User className="w-6 h-6" />
     </div>
 
   );
