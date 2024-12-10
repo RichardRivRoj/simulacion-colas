@@ -1,4 +1,160 @@
 "use client";
+class MinHeap {
+  constructor() {
+    this.heap = [];
+  }
+
+  insert(element) {
+    this.heap.push(element);
+    this.bubbleUp(this.heap.length - 1);
+  }
+
+  bubbleUp(index) {
+    while (index > 0) {
+      const parentIndex = Math.floor((index - 1) / 2);
+      if (this.heap[parentIndex].time > this.heap[index].time) {
+        [this.heap[parentIndex], this.heap[index]] = [
+          this.heap[index],
+          this.heap[parentIndex],
+        ];
+        index = parentIndex;
+      } else {
+        break;
+      }
+    }
+  }
+
+  extractMin() {
+    if (this.heap.length === 0) return null;
+    const min = this.heap[0];
+    const lastElement = this.heap.pop();
+    if (this.heap.length > 0) {
+      this.heap[0] = lastElement;
+      this.sinkDown(0);
+    }
+    return min;
+  }
+
+  sinkDown(index) {
+    while (true) {
+      const leftChildIndex = 2 * index + 1;
+      const rightChildIndex = 2 * index + 2;
+      let smallest = index;
+      if (
+        leftChildIndex < this.heap.length &&
+        this.heap[leftChildIndex].time < this.heap[smallest].time
+      ) {
+        smallest = leftChildIndex;
+      }
+      if (
+        rightChildIndex < this.heap.length &&
+        this.heap[rightChildIndex].time < this.heap[smallest].time
+      ) {
+        smallest = rightChildIndex;
+      }
+      if (smallest !== index) {
+        [this.heap[index], this.heap[smallest]] = [
+          this.heap[smallest],
+          this.heap[index],
+        ];
+        index = smallest;
+      } else {
+        break;
+      }
+    }
+  }
+}
+
+function exponential(rate) {
+  return -Math.log(1 - Math.random()) / rate;
+}
+
+function simulateQueueIndefinitely(formData, setSimulationData, stopFlag) {
+  const {
+    numberOfTables,
+    queueLimit,
+    arrivalRate,
+    serviceRate,
+    queueLimitEnabled,
+  } = formData;
+  const lambda = arrivalRate / 60; // Convert to per minute
+  const mu = serviceRate / 60; // Convert to per minute
+  const numServers = numberOfTables;
+
+  // Initialize arrays to store simulation data
+  const arrivalTimes = [];
+  const serviceTimes = [];
+  const startTimeService = [];
+  const waitingTimes = [];
+  const departureTimes = [];
+  const timeInSystem = [];
+  const serverAssigned = [];
+
+  // Initialize priority queue with server availability times
+  const serverHeap = new MinHeap();
+  for (let i = 0; i < numServers; i++) {
+    serverHeap.insert({ time: 0, id: i });
+  }
+
+  // Initialize client counter
+  let clientIndex = 0;
+
+  // Function to generate inter-arrival and service times
+  function generateTimes() {
+    return {
+      arrival: clientIndex === 0 ? exponential(1 / lambda) : arrivalTimes[clientIndex - 1] + exponential(1 / lambda),
+      service: exponential(1 / mu),
+    };
+  }
+
+  // Simulation loop
+  const simulationInterval = setInterval(() => {
+    if (stopFlag.current) {
+      clearInterval(simulationInterval);
+      return;
+    }
+
+    // Generate times for the current client
+    const { arrival, service } = generateTimes();
+
+    // Process the current client
+    const server = serverHeap.extractMin();
+    if (server !== null) {
+      const serviceStart = Math.max(arrival, server.time);
+      const waiting = serviceStart - arrival;
+      const departure = serviceStart + service;
+      startTimeService.push(serviceStart);
+      waitingTimes.push(waiting);
+      departureTimes.push(departure);
+      timeInSystem.push(departure - arrival);
+      serverAssigned.push(server.id);
+      serverHeap.insert({ time: departure, id: server.id });
+    } else {
+      // No server available and queue is full, client is lost
+      // Handle client loss if necessary
+    }
+
+    // Update arrival and service times arrays
+    arrivalTimes.push(arrival);
+    serviceTimes.push(service);
+
+    // Update simulation data state
+    setSimulationData({
+      arrivalTimes,
+      serviceTimes,
+      startTimeService,
+      waitingTimes,
+      departureTimes,
+      timeInSystem,
+      serverAssigned,
+    });
+
+    // Increment client counter
+    clientIndex++;
+  }, 1000 / lambda); // Adjust the interval based on arrival rate
+}
+
+// In SimulationPage component
 import React, { useEffect, useState, useRef } from "react";
 import { gsap } from "gsap";
 import { useRouter } from "next/navigation";
