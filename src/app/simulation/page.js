@@ -103,10 +103,42 @@ export default function SimulationPage() {
     }
   }, []);
 
+  const moveTo = (personId) => {
+    const personElement = document.getElementById(`person-${personId}`);
+    const peopleArea = document.getElementById("PeopleArea");
+    if (!personElement || !peopleArea) return;
+
+    if (personElement && peopleArea) {
+      let personRect = personElement.getBoundingClientRect();
+      const peopleAreaRect = peopleArea.getBoundingClientRect();
+      let currentTop = personRect.top + window.scrollY;
+      let currentLeft = personRect.left + window.scrollX;
+
+      const targetTop = peopleAreaRect.top + window.scrollY;
+      const targetLeft = peopleAreaRect.left + window.scrollX;
+
+      // Crear animación con gsap.timeline()
+      const timeline = gsap.timeline();
+
+      // 1. Movimiento
+      if (currentTop !== targetTop || currentLeft !== targetLeft) {
+        timeline.to(personElement, {
+          x: targetLeft - currentLeft,
+          y: targetTop - currentTop,
+          duration: 0.5,
+          ease: "power1.inOut",
+        });
+      }
+    }
+  };
+
+  let personCounter = 0; // Contador global para IDs únicos
+
   const addPersonToWaitingArea = (arrivalTime, serviceTime) => {
     // Calcular la posición de la nueva persona en la WaitingArea
-    const waitingArea = document.getElementById("WaitingArea");
+    const waitingArea = document.getElementById("PeopleArea");
     const personCount = people.length;
+    console.log("hola");
 
     const personWidth = 50;
     const personHeight = 80;
@@ -117,12 +149,12 @@ export default function SimulationPage() {
     const row = Math.floor(personCount / personsInRow);
     const column = personCount % personsInRow;
 
-    const left = column * (personWidth + padding);
-    const top = row * (personHeight + padding);
+    const left = 50;
+    const top = 50
 
     // Crear la nueva persona
     const newPerson = {
-      id: people.length + 1,
+      id: ++personCounter,
       arrivalTime,
       serviceTime,
       position: { top, left },
@@ -131,9 +163,17 @@ export default function SimulationPage() {
 
     // Actualizar el estado
     setPeople([...people, newPerson]);
+    return newPerson.id;
   };
 
-  // TODO: Funcional pero la animacion falla de momento
+  const markAsAttended = (personId) => {
+    setPeople((prevPeople) =>
+      prevPeople.map((person) =>
+        person.id === personId ? { ...person, status: "attended" } : person
+      )
+    );
+  };
+
   const moveToTable = (personId, tableId) => {
     const personElement = document.getElementById(`person-${personId}`);
     const tableElement = document.getElementById(`table-${tableId}`);
@@ -188,8 +228,35 @@ export default function SimulationPage() {
           ease: "power1.inOut", // Suavizado
         });
       }
+
+      markAsAttended(personId);
     }
   };
+
+  const removeAttendedPersons = () => {
+    setPeople((prevPeople) => {
+      const updatedPeople = prevPeople.filter((person) => {
+        if (person.status === "attended") {
+          // Animar salida de la persona (opcional)
+          const personElement = document.getElementById(`person-${person.id}`);
+          if (personElement) {
+            gsap.to(personElement, {
+              opacity: 0,
+              duration: 0.5,
+              onComplete: () => {
+                personElement.remove(); // Eliminar elemento del DOM
+              },
+            });
+          }
+          return false; // Filtrar persona
+        }
+        return true; // Mantener persona
+      });
+
+      return updatedPeople; // Retornar lista actualizada
+    });
+  };
+
 
   function simulateQueueIndefinitely(formData, setSimulationData, stopFlag) {
     const {
@@ -261,17 +328,10 @@ export default function SimulationPage() {
       serviceTimes.push(service);
 
       // Agregar nueva persona al área de espera
-      addPersonToWaitingArea(arrival, service,);
+      const personId = addPersonToWaitingArea(arrival, service);
 
-      // Intentar asignar personas a servidores
-      people.forEach((person) => {
-        if (person.status === "waiting") {
-          if (serverAssigned) {
-            moveToTable(person.id, serverAssigned);
-            person.status = "served";
-          }
-        }
-      });
+      // Mover persona a la mesa asignada
+      setTimeout(() => moveToTable(personId, server.id), 0);
 
       // Update simulation data state
       setSimulationData({
@@ -286,12 +346,15 @@ export default function SimulationPage() {
 
       // Increment client counter
       clientIndex++;
-    }, 100 / lambda); // Adjust the interval based on arrival rate
+    }, 1000 / lambda); // Adjust the interval based on arrival rate
   }
 
   const handleStart = () => {
     stopFlag.current = false;
     simulateQueueIndefinitely(config, setSimulationData, stopFlag);
+    setTimeout(() => {
+      removeAttendedPersons(); // Limpiar área de espera
+    }, 500); // Llamar con un retraso
   };
 
   const handleStop = () => {
@@ -328,9 +391,9 @@ export default function SimulationPage() {
         {/* Waiting Area */}
         <div
           id="WaitingArea"
-          className="col-span-2 row-span-2 bg-red-100 border-b-2 border-black"
+          className="flex justify-end col-span-2 row-span-2 bg-red-100 border-b-2 border-black"
         >
-          <div className="grid w-[95%] h-auto gap-4 p-2 place-items-center grid-cols-5">
+          <div id="PeopleArea" className="flex flex-row-reverse w-[95%] h-auto gap-4 p-2 justify-end items-center">
             {people.map((person) => (
               <Person
                 key={person.id}
@@ -341,6 +404,7 @@ export default function SimulationPage() {
             ))}
           </div>
         </div>
+
         <div id="entrance" className="col-span-1 row-span-2 bg-green-50"></div>
         <div className="col-span-1 row-span-2 p-2 border-2 border-black">
           <WaitingArea />

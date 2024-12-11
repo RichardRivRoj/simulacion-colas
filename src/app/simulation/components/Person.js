@@ -12,7 +12,7 @@ export default function Person({ position, status, id}) {
       id={`person-${id}`}
       ref={personRef}
       className={`person absolute ${status === 'waiting' ? 'text-yellow-500' :
-          status === 'served' ? 'text-green-500' : 'text-blue-500'
+          status === 'attended' ? 'text-green-500' : 'text-blue-500'
         }`}
       style={{
         left: `${left}px`, // Posición inicial (esquina superior izquierda)
