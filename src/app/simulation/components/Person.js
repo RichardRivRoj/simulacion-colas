@@ -21,21 +21,10 @@ export default function Person({ position, status, id}) {
       }}
     >
       {/* Personaje */}
-      <User className="w-6 h-6" />
+      <img src={`${status === 'waiting' ? 'person1.png' :
+          status === 'attended' ? 'person1.png' : 'text-blue-500'
+        }`} className="w-6 h-8"></img>
     </div>
 
   );
-
-  // return (
-  //   <div
-  //     ref={personRef}
-  //     className={`absolute ${
-  //       status === 'waiting' ? 'text-yellow-500' :
-  //       status === 'served' ? 'text-green-500' : 'text-blue-500'
-  //     }`}
-  //     style={{ transform: `translate(${position.initial.x}px, ${position.initial.y}px)` }}
-  //   >
-  //     <User className="w-6 h-6" />
-  //   </div>
-  // );
 }

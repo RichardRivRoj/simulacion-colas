@@ -370,8 +370,8 @@ export default function SimulationPage() {
     for (let i = 0; i < numberOfTables; i++) {
       tables.push(
         <div key={i} className="flex items-center justify-center text-center">
-          <p className="text-[10px]">
-            {i}
+          <p className="text-[10px] text-black">
+            {i + 1}
             <img
               id={`table-${i}`}
               src="/table.svg"
@@ -429,7 +429,6 @@ export default function SimulationPage() {
         </div>
 
         {/* Buttons */}
-        // * Import: El boton de play no funciona a la primera
         <button
           className="absolute px-4 py-2 text-white bg-blue-500 rounded top-4 right-4 hover:bg-blue-600"
           onClick={handleStart}
